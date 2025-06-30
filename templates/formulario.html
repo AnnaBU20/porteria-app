@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario de Registro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        h1 {
+            text-align: center;
+            color: #163677;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 10px;
+            background-color: #163677;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #122a5a;
+        }
+        .firma-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #canvas {
+            width: 100%;
+            max-width: 500px;
+            height: 200px;
+            border: 1px solid #000;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Entrada</h1>
+        <form method="POST">
+            <label>Tipo operación:</label>
+            <select name="tipo_operacion" required>
+                <option value="Carga tablero">Carga tablero</option>
+                <option value="Residuos">Residuos</option>
+                <option value="Químicos">Químicos</option>
+                <option value="Madera">Madera</option> <!-- AÑADIDO -->
+            </select>
+
+            <label>Empresa - Company:</label>
+            <input type="text" name="empresa" required>
+
+            <label>Matrícula tractora - Tractor plate:</label>
+            <input type="text" name="matricula_tractora" required>
+
+            <label>Matrícula remolque - Trailer plate:</label>
+            <input type="text" name="matricula_remolque" required>
+
+            <label>Nombre - Name:</label>
+            <input type="text" name="nombre" required>
+
+            <label>DNI - ID:</label>
+            <input type="text" name="dni" required>
+
+            <label>Fecha - Date:</label>
+            <input type="date" name="fecha" required>
+
+            <label>Idioma - Language:</label>
+            <select name="idioma" required>
+                <option value="ES">ES</option>
+                <option value="EN">EN</option>
+                <option value="DE">DE</option>
+                <option value="PT">PT</option>
+                <option value="FR">FR</option>
+                <option value="RU">RU</option>
+                <option value="RO">RO</option>
+            </select>
+
+            <label>
+                <input type="checkbox" name="acepta" required> Acepto las condiciones de seguridad - I accept the security conditions
+            </label>
+
+            <!-- Bloque de firma -->
+            <div class="firma-container">
+                <h3>Firma del conductor:</h3>
+                <canvas id="canvas"></canvas><br>
+                <button type="button" onclick="limpiarFirma()">Borrar firma</button>
+                <input type="hidden" name="firma_base64" id="firma_base64">
+            </div>
+
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function redimensionarCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 200;
+        }
+        redimensionarCanvas();
+        window.addEventListener('resize', redimensionarCanvas);
+
+        let dibujando = false;
+
+        function obtenerPosicion(evt) {
+            const rect = canvas.getBoundingClientRect();
+            if (evt.touches) {
+                return {
+                    x: evt.touches[0].clientX - rect.left,
+                    y: evt.touches[0].clientY - rect.top
+                };
+            } else {
+                return {
+                    x: evt.offsetX,
+                    y: evt.offsetY
+                };
+            }
+        }
+
+        canvas.addEventListener('mousedown', e => {
+            dibujando = true;
+            const pos = obtenerPosicion(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (dibujando) {
+                const pos = obtenerPosicion(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => dibujando = false);
+        canvas.addEventListener('mouseout', () => dibujando = false);
+
+        // Soporte táctil
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            dibujando = true;
+            const pos = obtenerPosicion(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (dibujando) {
+                const pos = obtenerPosicion(e);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('touchend', () => dibujando = false);
+
+        function limpiarFirma() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        document.querySelector('form').addEventListener('submit', function () {
+            const dataURL = canvas.toDataURL();
+            document.getElementById('firma_base64').value = dataURL;
+        });
+    </script>
+</body>
+</html>

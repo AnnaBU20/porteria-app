@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Listado de Registros</h1>
+
+<form method="get" action="/registros">
+    <label>Desde:</label>
+    <input type="date" name="fecha_inicio" value="{{ request.args.get('fecha_inicio', '') }}">
+    <label>Hasta:</label>
+    <input type="date" name="fecha_fin" value="{{ request.args.get('fecha_fin', '') }}">
+    <button type="submit">Filtrar</button>
+</form>
+
+<!-- Botón de exportación a PDF -->
+<form method="get" action="/exportar_registros_pdf" target="_blank" style="margin-top: 20px;">
+    <input type="hidden" name="fecha_inicio" value="{{ request.args.get('fecha_inicio', '') }}">
+    <input type="hidden" name="fecha_fin" value="{{ request.args.get('fecha_fin', '') }}">
+    <button type="submit">Exportar registros a PDF</button>
+</form>
+
+<table id="tabla-registros">
+    <thead>
+        <tr>
+            <th>Tipo operación</th>
+            <th>Empresa</th>
+            <th>Matrícula tractora</th>
+            <th>Matrícula remolque</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Fecha</th>
+            <th>Hora Entrega</th>
+            <th>Idioma</th>
+            <th>Protocolo</th>
+        </tr>
+        <tr>
+            {% for i in range(9) %}
+            <th>
+                <input type="text" onkeyup="buscarPorTexto(this, {{ i }})" placeholder="Buscar..." style="width: 100%; padding: 5px;">
+            </th>
+            {% endfor %}
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for registro in registros %}
+        <tr>
+            <td>{{ registro.tipo_operacion }}</td>
+            <td>{{ registro.empresa }}</td>
+            <td>{{ registro.matricula_tractora }}</td>
+            <td>{{ registro.matricula_remolque }}</td>
+            <td>{{ registro.nombre }}</td>
+            <td>{{ registro.dni }}</td>
+            <td>{{ registro.fecha }}</td>
+            <td>{{ registro.hora_entrega.strftime('%H:%M') }}</td>
+            <td>{{ registro.idioma }}</td>
+            <td>
+                {% if registro.protocolo_filename %}
+                <a href="{{ url_for('descargar_protocolo', registro_id=registro.id) }}">Descargar</a>
+                {% else %}
+                -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function buscarPorTexto(input, columna) {
+    const filtro = input.value.toLowerCase();
+    const tabla = document.getElementById("tabla-registros");
+    const filas = tabla.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+
+    for (let i = 0; i < filas.length; i++) {
+        const celda = filas[i].getElementsByTagName("td")[columna];
+        const texto = celda.textContent.toLowerCase();
+        if (texto.includes(filtro)) {
+            filas[i].style.display = "";
+        } else {
+            filas[i].style.display = "none";
+        }
+    }
+}
+</script>
+{% endblock %}
