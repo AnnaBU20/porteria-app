@@ -68,7 +68,7 @@
                 <option value="Carga tablero">Carga tablero</option>
                 <option value="Residuos">Residuos</option>
                 <option value="Químicos">Químicos</option>
-                <option value="Madera">Madera</option> <!-- AÑADIDO -->
+                <option value="Madera">Madera</option>
             </select>
 
             <label>Empresa - Company:</label>
@@ -102,6 +102,11 @@
 
             <label>
                 <input type="checkbox" name="acepta" required> Acepto las condiciones de seguridad - I accept the security conditions
+            </label>
+
+            <label>
+                <input type="checkbox" name="proteccion_datos" required>
+                He leído y acepto la política de protección de datos. Mis datos serán tratados únicamente con la finalidad de gestionar el acceso a las instalaciones de Kronospan, conforme a la normativa vigente.
             </label>
 
             <!-- Bloque de firma -->
@@ -162,7 +167,6 @@
         canvas.addEventListener('mouseup', () => dibujando = false);
         canvas.addEventListener('mouseout', () => dibujando = false);
 
-        // Soporte táctil
         canvas.addEventListener('touchstart', e => {
             e.preventDefault();
             dibujando = true;
