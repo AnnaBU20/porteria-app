@@ -29,6 +29,7 @@ class Registro(db.Model):
     fecha = db.Column(db.Date, nullable=False)
     hora_entrega = db.Column(db.DateTime, default=datetime.utcnow)
     acepta = db.Column(db.Boolean, nullable=False)
+    proteccion_datos = db.Column(db.Boolean, nullable=False)
     idioma = db.Column(db.String(10), nullable=False)
     firma_filename = db.Column(db.String(200), nullable=True)
     protocolo_filename = db.Column(db.String(200), nullable=True)
@@ -55,8 +56,14 @@ def formulario():
         dni = request.form['dni']
         fecha_str = request.form['fecha']
         fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
-        acepta = 'acepta' in request.form
         idioma = request.form['idioma']
+
+        acepta = 'acepta' in request.form
+        proteccion_datos = 'proteccion_datos' in request.form
+
+        if not acepta or not proteccion_datos:
+            flash("Debe aceptar las condiciones de seguridad y la política de protección de datos.")
+            return redirect(url_for('formulario'))
 
         firma_data = request.form['firma_base64']
         match = re.match(r'data:image/png;base64,(.*)', firma_data)
@@ -79,6 +86,7 @@ def formulario():
             dni=dni,
             fecha=fecha,
             acepta=acepta,
+            proteccion_datos=proteccion_datos,
             idioma=idioma,
             firma_filename=firma_filename
         )
@@ -90,7 +98,11 @@ def formulario():
         nuevo_registro.protocolo_filename = os.path.basename(protocolo_path)
         db.session.commit()
 
-        return render_template('confirmacion.html')
+        return render_template(
+            'confirmacion.html',
+            registro_id=nuevo_registro.id,
+            protocolo_filename=nuevo_registro.protocolo_filename
+        )
 
     return render_template('formulario.html')
 
@@ -105,7 +117,11 @@ def login():
             return redirect(url_for('registros'))
         else:
             flash("Credenciales incorrectas.")
-    return render_template('login.html')
+    return render_template(
+    'confirmacion.html',
+    protocolo_filename=nuevo_registro.protocolo_filename,
+    registro_id=nuevo_registro.id
+)
 
 @app.route('/logout')
 @login_required
@@ -129,7 +145,6 @@ def registros():
     return render_template('registros.html', registros=registros)
 
 @app.route('/descargar_protocolo/<int:registro_id>')
-@login_required
 def descargar_protocolo(registro_id):
     registro = Registro.query.get_or_404(registro_id)
     if registro.protocolo_filename:
@@ -142,7 +157,6 @@ def descargar_protocolo(registro_id):
 @app.route('/exportar_registros_pdf')
 @login_required
 def exportar_registros_pdf():
-    from pdf_generador import generar_pdf  # O el nombre real de tu archivo si es distinto
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
 
