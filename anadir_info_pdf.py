@@ -33,6 +33,15 @@ def generar_protocolo_desde_plantilla(registro):
         can.setFont("Helvetica", 9)
         width, height = landscape(A4)
         can.drawCentredString(width / 2, height - 3 * 28.35, info)
+                # Añadir imagen de la firma si existe
+        if registro.firma_filename:
+            firma_path = os.path.join("static", "firmas", registro.firma_filename)
+            if os.path.exists(firma_path):
+                firma_width = 100  # ancho de la imagen
+                firma_height = 40  # alto de la imagen
+                x_firma = width - firma_width - 28.35  # 28.35 puntos desde el borde derecho
+                y_firma = height - firma_height - 28.35  # 28.35 puntos desde el borde superior
+                can.drawImage(firma_path, x_firma, y_firma, width=firma_width, height=firma_height, preserveAspectRatio=True, mask='auto')
         can.save()
 
         packet.seek(0)
