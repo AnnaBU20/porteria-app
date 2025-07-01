@@ -95,6 +95,8 @@ def formulario():
         db.session.commit()
 
         protocolo_path = generar_protocolo_desde_plantilla(nuevo_registro)
+        print("PDF generado en:", protocolo_path)  # Para comprobar que se genera el PDF
+
         nuevo_registro.protocolo_filename = os.path.basename(protocolo_path)
         db.session.commit()
 
@@ -117,11 +119,7 @@ def login():
             return redirect(url_for('registros'))
         else:
             flash("Credenciales incorrectas.")
-    return render_template(
-    'confirmacion.html',
-    protocolo_filename=nuevo_registro.protocolo_filename,
-    registro_id=nuevo_registro.id
-)
+    return render_template('login.html')
 
 @app.route('/logout')
 @login_required
