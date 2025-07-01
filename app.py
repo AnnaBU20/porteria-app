@@ -7,7 +7,7 @@ import io
 import base64
 import re
 from anadir_info_pdf import generar_protocolo_desde_plantilla
-from pdf_generador import generar_pdf
+from generar_registro_conductores_pdf import generar_registro_pdf  # actualizado
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_segura'
@@ -95,7 +95,7 @@ def formulario():
         db.session.commit()
 
         protocolo_path = generar_protocolo_desde_plantilla(nuevo_registro)
-        print("PDF generado en:", protocolo_path)  # Para comprobar que se genera el PDF
+        print("PDF generado en:", protocolo_path)
 
         nuevo_registro.protocolo_filename = os.path.basename(protocolo_path)
         db.session.commit()
@@ -165,12 +165,12 @@ def exportar_registros_pdf():
         query = query.filter(Registro.fecha >= fecha_inicio_obj, Registro.fecha <= fecha_fin_obj)
 
     registros_filtrados = query.all()
-    pdf_buffer = generar_pdf(registros_filtrados)
+    pdf_buffer = generar_registro_pdf(registros_filtrados)
 
     return send_file(
         pdf_buffer,
         as_attachment=True,
-        download_name='registros.pdf',
+        download_name='registro_conductores.pdf',
         mimetype='application/pdf'
     )
 

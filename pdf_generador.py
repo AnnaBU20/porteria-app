@@ -9,7 +9,6 @@ from datetime import datetime
 
 def generar_pdf(registros):
     buffer = io.BytesIO()
-    
     c = canvas.Canvas(buffer, pagesize=landscape(A4))
     width, height = landscape(A4)
     fecha_generacion = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -17,27 +16,36 @@ def generar_pdf(registros):
     def cabecera(pagina_num):
         logo_path = os.path.join(os.getcwd(), "static", "logo.jpeg")
         try:
-            c.drawImage(logo_path, width/2 - 80, height - 60, width=160, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_path, 30, height - 60, width=100, preserveAspectRatio=True, mask='auto')
         except:
             pass
 
-        c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(width / 2, height - 95, "Registro de Entrega del Protocolo de Seguridad")
+        c.setFont("Helvetica-Bold", 14)
+        c.drawCentredString(width / 2, height - 40, "HOJA DE REGISTRO DE ENTREGA DE INFORMACIÓN A LOS CONDUCTORES")
 
-        # Ajustamos tabla más arriba
-        y_header = height - 125
-        c.setFillColor(colors.HexColor('#163677'))
-        c.rect(25, y_header - 15, width - 50, 25, fill=1, stroke=0)
+        c.setFont("Helvetica", 8)
+        c.drawRightString(width - 30, height - 30, f"Generado: {fecha_generacion}")
 
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 11)
-        headers = ["Fecha", "Hora", "Tipo operación", "Empresa", "Tractora", "Remolque", "Nombre", "DNI", "Idioma"]
-        x_positions = [30, 100, 180, 300, 420, 520, 620, 750, 850]
-        for i, header in enumerate(headers):
-            c.drawString(x_positions[i], y_header, header)
+        # Encabezados de tabla personalizados
+        y = height - 80
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(1)
+
+        # Rectángulos grandes para secciones
+        c.rect(25, y - 40, width - 50, 30, stroke=1, fill=0)  # Cabecera superior
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(30, y - 25, "Empresa")
+        c.drawString(160, y - 25, "Información del Vehículo")
+        c.drawString(360, y - 35, "Matrícula Tractora")
+        c.drawString(500, y - 35, "Matrícula Remolque")
+        c.drawString(640, y - 25, "Información del Conductor")
+        c.drawString(760, y - 35, "Nombre")
+        c.drawString(880, y - 35, "DNI")
+        c.drawString(1000, y - 25, "Fecha")
+        c.drawString(1080, y - 25, "Firma")
 
         pie_legal(c, width, fecha_generacion, pagina_num)
-        return y_header - 30
+        return y - 50
 
     def pie_legal(c, width, fecha_generacion, pagina_num):
         c.setFont("Helvetica", 6)
@@ -52,7 +60,7 @@ def generar_pdf(registros):
         justified = ParagraphStyle(
             name='Justificado',
             parent=styles['Normal'],
-            alignment=4,  # Justificado total
+            alignment=4,
             fontName="Helvetica",
             fontSize=6,
             leading=8,
@@ -69,36 +77,32 @@ def generar_pdf(registros):
 
     pagina = 1
     y = cabecera(pagina)
-    c.setFont("Helvetica", 10)
+    c.setFont("Helvetica", 9)
     c.setFillColor(colors.black)
-    x_positions = [30, 100, 180, 300, 420, 520, 620, 750, 850]
 
     for r in registros:
-        datos = [
-            str(r.fecha),
-            r.hora_entrega.strftime('%H:%M'),
-            r.tipo_operacion,
-            r.empresa,
-            r.matricula_tractora,
-            r.matricula_remolque,
-            r.nombre,
-            r.dni,
-            r.idioma
-        ]
-        for i, dato in enumerate(datos):
-            c.drawString(x_positions[i], y, dato)
-
-        c.setStrokeColor(colors.lightgrey)
-        c.line(25, y - 3, width - 25, y - 3)
-
-        y -= 20
-
         if y < 100:
             c.showPage()
             pagina += 1
             y = cabecera(pagina)
-            c.setFont("Helvetica", 10)
+            c.setFont("Helvetica", 9)
             c.setFillColor(colors.black)
+
+        c.drawString(30, y, r.empresa)
+        c.drawString(360, y, r.matricula_tractora)
+        c.drawString(500, y, r.matricula_remolque)
+        c.drawString(760, y, r.nombre)
+        c.drawString(880, y, r.dni)
+        c.drawString(1000, y, r.fecha.strftime('%Y-%m-%d'))
+
+        firma_path = os.path.join("static", "firmas", r.firma_filename) if r.firma_filename else None
+        if firma_path and os.path.exists(firma_path):
+            try:
+                c.drawImage(firma_path, 1080, y - 5, width=50, height=20, preserveAspectRatio=True, mask='auto')
+            except:
+                pass
+
+        y -= 25
 
     c.save()
     buffer.seek(0)
