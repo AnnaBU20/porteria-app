@@ -13,8 +13,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from anadir_info_pdf import generar_protocolo_desde_plantilla
 from generar_registro_conductores_pdf import generar_registro_pdf
-from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_segura'
@@ -96,8 +94,6 @@ def formulario():
             os.makedirs(os.path.dirname(firma_path), exist_ok=True)
             with open(firma_path, "wb") as f:
                 f.write(firma_bytes)
-        else:
-            firma_filename = None
 
         nuevo_registro = Registro(
             tipo_operacion=tipo_operacion,
