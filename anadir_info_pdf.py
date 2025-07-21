@@ -33,7 +33,7 @@ def generar_protocolo_desde_plantilla(registro):
         can.setFont("Helvetica", 9)
         width, height = landscape(A4)
         can.drawCentredString(width / 2, height - 3 * 28.35, info)
-                # Añadir imagen de la firma si existe
+        # Añadir imagen de la firma si existe
         if registro.firma_filename:
             firma_path = os.path.join("static", "firmas", registro.firma_filename)
             if os.path.exists(firma_path):
