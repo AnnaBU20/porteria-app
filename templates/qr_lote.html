@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generar Códigos QR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #163677;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #163677;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0e2a5f;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generar páginas de QR de un solo uso</h1>
+    <form action="{{ url_for('generar_qr_lote') }}" method="GET">
+        <button type="submit">Generar PDF con 14 códigos QR únicos</button>
+    </form>
+</body>
+</html>

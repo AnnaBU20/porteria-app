@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Control - Camiones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #163677;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #163677;
+            color: white;
+        }
+
+        .estado {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin: auto;
+        }
+
+        .esperando {
+            background-color: red;
+        }
+
+        .dentro {
+            background-color: orange;
+        }
+
+        .salido {
+            background-color: green;
+        }
+
+        button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 2px;
+        }
+
+        .btn-dar-paso {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-dar-paso:hover {
+            background-color: #218838;
+        }
+
+        .btn-salida {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .btn-salida:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-eliminar {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-eliminar:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Panel de Control - Camiones</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Estado</th>
+                <th>Tipo Operación</th>
+                <th>Empresa</th>
+                <th>Matrícula Tractora</th>
+                <th>Matrícula Remolque</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr>
+                <td><div class="estado {{ r.estado }}"></div></td>
+                <td>{{ r.tipo_operacion }}</td>
+                <td>{{ r.empresa }}</td>
+                <td>{{ r.matricula_tractora }}</td>
+                <td>{{ r.matricula_remolque }}</td>
+                <td>{{ r.fecha.strftime('%Y-%m-%d') }}</td>
+                <td>{{ r.hora_entrega.strftime('%H:%M') }}</td>
+                <td>
+                    {% if r.estado != 'salido' %}
+                    <form action="{{ url_for('actualizar_estado', registro_id=r.id) }}" method="POST" style="display:inline;">
+                        {% if r.estado == 'esperando' %}
+                            <input type="hidden" name="nuevo_estado" value="dentro">
+                            <button type="submit" class="btn-dar-paso">Dar paso</button>
+                        {% elif r.estado == 'dentro' %}
+                            <input type="hidden" name="nuevo_estado" value="salido">
+                            <button type="submit" class="btn-salida">Camión ha salido</button>
+                        {% endif %}
+                    </form>
+                    {% else %}
+                        -
+                    {% endif %}
+                    {% if r.estado == 'esperando' %}
+                    <form action="{{ url_for('eliminar_registro', registro_id=r.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn-eliminar">Eliminar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

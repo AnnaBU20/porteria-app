@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso Temporal - Kronospan</title>
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        h1 {
+            color: #163677;
+            margin-bottom: 20px;
+        }
+
+        #qr {
+            margin: 20px 0;
+        }
+
+        #timer {
+            font-size: 24px;
+            color: #163677;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 10px 0;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Escanee el código QR para registrarse</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <div id="qr">
+        <img id="qr-image" src="/qr_image" alt="Código QR" width="300" height="300">
+    </div>
+
+    <div id="timer">10:00</div>
+
+    <script>
+        let countdown = 600;
+        const timerDisplay = document.getElementById("timer");
+
+        function updateTimer() {
+            const minutes = Math.floor(countdown / 60);
+            const seconds = countdown % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            countdown--;
+            if (countdown < 0) {
+                location.reload();
+            }
+        }
+
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
