@@ -57,17 +57,29 @@
             border: 1px solid #000;
             touch-action: none;
         }
+        details {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Registro de Entrada</h1>
-        {% if not session.get('camionero_id') %}
+
         <div style="text-align: center; margin-bottom: 20px;">
-            <a href="{{ url_for('login_camionero') }}" style="margin: 0 20px; text-decoration: none; font-weight: bold; color: #163677;">Login</a>
-            <a href="{{ url_for('registro_camionero') }}" style="margin: 0 20px; text-decoration: none; font-weight: bold; color: #163677;">Registro</a>
+            {% if not session.get('camionero_id') %}
+                <a href="{{ url_for('login_camionero') }}" style="margin: 0 20px; text-decoration: none; font-weight: bold; color: #163677;">Login</a>
+                <a href="{{ url_for('registro_camionero') }}" style="margin: 0 20px; text-decoration: none; font-weight: bold; color: #163677;">Registro</a>
+            {% else %}
+                <form method="GET" action="{{ url_for('logout_camionero') }}">
+                    <button type="submit" style="background-color: #163677; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold;">Cerrar sesión</button>
+                </form>
+            {% endif %}
         </div>
-        {% endif %}
 
         <form method="POST">
             <label>Tipo operación:</label>
@@ -116,10 +128,16 @@
 
             <label>
                 <input type="checkbox" name="proteccion_datos" required>
-                He leído y acepto la política de protección de datos. Mis datos serán tratados únicamente con la finalidad de gestionar el acceso a las instalaciones de Kronospan, conforme a la normativa vigente.
+                Aceptación de la política de protección de datos
             </label>
+            <details>
+                <summary>Leer más</summary>
+                <p style="font-size: 14px; margin-top: 10px;">
+                    Kronospan Tortosa, S.L. (en adelante, Kronospan) tratará sus datos con el fin de controlar el acceso a las instalaciones de Kronospan en condiciones de seguridad. El tratamiento se encuentra legitimado por ser necesario para la ejecución del contrato suscrito entre Kronospan y la entidad para cual el conductor presta servicios. Los datos serán conservados mientras perdure la finalidad para la que fueron recabados, tras lo cual serán bloqueados conforme a lo establecido en el art. 32 de la Ley Orgánica 3/2018. Transcurrido el periodo de bloqueo, los datos serán suprimidos. No se prevé la cesión de datos a terceros, salvo en caso de mandato legal o a entidades del Grupo Kronospan con fines administrativos internos y en base al interés legítimo. No está prevista la realización de trasferencias internacionales de datos. Puede ejercitar sus derechos de acceso, rectificación o supresión, limitación del tratamiento, portabilidad u oposición mediante el envío de un correo postal a Barrio Castañares S/N, Burgos, 09199 (España), o por medio de un correo electrónico dirigido a: privacy@kronospan.es. En caso de considerar vulnerados sus derechos en esta materia, puede interponer una reclamación ante la Agencia Española de Protección de Datos.
+                </p>
+            </details>
 
-            <!-- Bloque de firma -->
+            <!-- Firma -->
             <div class="firma-container">
                 <h3>Firma del conductor:</h3>
                 <canvas id="canvas"></canvas><br>
@@ -200,9 +218,22 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        document.querySelector('form').addEventListener('submit', function () {
+        document.querySelector('form').addEventListener('submit', function (e) {
             const dataURL = canvas.toDataURL();
-            document.getElementById('firma_base64').value = dataURL;
+            const firmaBase64Input = document.getElementById('firma_base64');
+            firmaBase64Input.value = dataURL;
+
+            // Verifica si la firma está vacía (todo blanco)
+            const blankCanvas = document.createElement('canvas');
+            blankCanvas.width = canvas.width;
+            blankCanvas.height = canvas.height;
+            const blankCtx = blankCanvas.getContext('2d');
+            const blankData = blankCanvas.toDataURL();
+
+            if (dataURL === blankData) {
+                alert('Por favor, firme antes de enviar el formulario.');
+                e.preventDefault(); // Evita el envío del formulario
+            }
         });
     </script>
 </body>

@@ -17,13 +17,12 @@ def generar_registro_pdf(registros):
     paginas = [registros[i:i+filas_por_pagina] for i in range(0, len(registros), filas_por_pagina)]
 
     writer = PdfWriter()
-    for pagina_num, registros_pagina in enumerate(paginas):
+    for registros_pagina in paginas:
         reader = PdfReader(plantilla_path)
         template_page = reader.pages[0]
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=landscape(A4))
 
-        # Coordenadas exactas proporcionadas por el usuario
         coordenadas = [
             (62.64, 428.64), (198, 428.64), (294.24, 428.64), (388.56, 428.64), (523.2, 428.64), (614.88, 428.64), (686.64, 428.64),
             (62.64, 406.32), (198, 406.08), (294.24, 406.32), (388.56, 406.32), (523.2, 406.32), (614.88, 406.32), (686.64, 406.32),
@@ -46,16 +45,12 @@ def generar_registro_pdf(registros):
         for i, registro in enumerate(registros_pagina):
             base_idx = i * 7
             can.setFont("Helvetica", 8)
-            can.drawString(coordenadas[base_idx + 0][0], coordenadas[base_idx + 0][1], registro.empresa)
-            can.drawString(coordenadas[base_idx + 1][0], coordenadas[base_idx + 1][1], registro.matricula_tractora)
-            can.drawString(coordenadas[base_idx + 2][0], coordenadas[base_idx + 2][1], registro.matricula_remolque)
-            can.drawString(coordenadas[base_idx + 3][0], coordenadas[base_idx + 3][1], registro.nombre)
-            can.drawString(coordenadas[base_idx + 4][0], coordenadas[base_idx + 4][1], registro.dni)
-            can.drawString(coordenadas[base_idx + 5][0], coordenadas[base_idx + 5][1], registro.fecha.strftime("%Y-%m-%d"))
-            if registro.firma_filename:
-                firma_path = os.path.join("static", "firmas", registro.firma_filename)
-                if os.path.exists(firma_path):
-                    can.drawImage(firma_path, coordenadas[base_idx + 6][0], coordenadas[base_idx + 6][1] - 10, width=40, height=20, preserveAspectRatio=True, mask='auto')
+            can.drawString(coordenadas[base_idx + 0][0], coordenadas[base_idx + 0][1], registro['empresa'])
+            can.drawString(coordenadas[base_idx + 1][0], coordenadas[base_idx + 1][1], registro['matricula_tractora'])
+            can.drawString(coordenadas[base_idx + 2][0], coordenadas[base_idx + 2][1], registro['matricula_remolque'])
+            can.drawString(coordenadas[base_idx + 3][0], coordenadas[base_idx + 3][1], registro['nombre'])
+            can.drawString(coordenadas[base_idx + 4][0], coordenadas[base_idx + 4][1], registro['dni'])
+            can.drawString(coordenadas[base_idx + 5][0], coordenadas[base_idx + 5][1], registro['fecha'])
 
         can.save()
         packet.seek(0)

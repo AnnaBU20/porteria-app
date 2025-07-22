@@ -89,11 +89,18 @@
             background-color: #c82333;
         }
     </style>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+
+    <!-- jQuery y DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 </head>
 <body>
     <h1>Panel de Control - Camiones</h1>
 
-    <table>
+    <table id="tabla-camiones">
         <thead>
             <tr>
                 <th>Estado</th>
@@ -140,5 +147,23 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        // Inicializar DataTables en español
+        $(document).ready(function () {
+            $('#tabla-camiones').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
+                }
+            });
+        });
+
+        // Recarga la página si se vuelve con el botón 'atrás'
+        window.onpageshow = function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        };
+    </script>
 </body>
 </html>

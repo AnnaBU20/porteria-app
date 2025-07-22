@@ -10,11 +10,12 @@
     <button type="submit">Filtrar</button>
 </form>
 
-<!-- Botón de exportación a PDF -->
-<form method="get" action="/exportar_registros_pdf" target="_blank" style="margin-top: 20px;">
-    <input type="hidden" name="fecha_inicio" value="{{ request.args.get('fecha_inicio', '') }}">
-    <input type="hidden" name="fecha_fin" value="{{ request.args.get('fecha_fin', '') }}">
-    <button type="submit">Exportar registros a PDF</button>
+<!-- Botones de exportación -->
+<form id="exportar-form" method="POST" target="_blank" style="margin-top: 20px;">
+    <input type="hidden" name="tipo" id="exportar-tipo">
+    <input type="hidden" name="registros_filtrados" id="registros-json">
+    <button type="button" onclick="exportar('pdf')">Exportar registros a PDF</button>
+    <button type="button" onclick="exportar('excel')">Exportar registros a Excel</button>
 </form>
 
 <table id="tabla-registros">
@@ -65,20 +66,43 @@
 </table>
 
 <script>
-function buscarPorTexto(input, columna) {
-    const filtro = input.value.toLowerCase();
-    const tabla = document.getElementById("tabla-registros");
-    const filas = tabla.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+function exportar(tipo) {
+    const filas = document.querySelectorAll("#tabla-registros tbody tr");
+    const registros = [];
 
-    for (let i = 0; i < filas.length; i++) {
-        const celda = filas[i].getElementsByTagName("td")[columna];
-        const texto = celda.textContent.toLowerCase();
-        if (texto.includes(filtro)) {
-            filas[i].style.display = "";
-        } else {
-            filas[i].style.display = "none";
+    filas.forEach(fila => {
+        if (fila.style.display !== "none") {
+            const celdas = fila.querySelectorAll("td");
+            registros.push({
+                tipo_operacion: celdas[0].innerText,
+                empresa: celdas[1].innerText,
+                matricula_tractora: celdas[2].innerText,
+                matricula_remolque: celdas[3].innerText,
+                nombre: celdas[4].innerText,
+                dni: celdas[5].innerText,
+                fecha: celdas[6].innerText,
+                hora: celdas[7].innerText,
+                idioma: celdas[8].innerText
+            });
         }
+    });
+
+    if (registros.length === 0) {
+        alert("No hay registros para exportar.");
+        return;
     }
+
+    document.getElementById("exportar-tipo").value = tipo;
+    document.getElementById("registros-json").value = JSON.stringify(registros);
+
+    if (tipo === "pdf") {
+        document.getElementById("exportar-form").action = "/exportar_registros_pdf";
+    } else {
+        document.getElementById("exportar-form").action = "/exportar_registros_excel";
+    }
+
+    document.getElementById("exportar-form").submit();
 }
 </script>
+
 {% endblock %}

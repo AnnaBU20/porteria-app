@@ -17,6 +17,12 @@ from anadir_info_pdf import generar_protocolo_desde_plantilla
 from generar_registro_conductores_pdf import generar_registro_pdf
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import session
+import pandas as pd
+from flask import send_file
+import json
+import pytz
+
+
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_segura'
@@ -124,6 +130,9 @@ def formulario():
             os.makedirs(os.path.dirname(firma_path), exist_ok=True)
             with open(firma_path, "wb") as f:
                 f.write(firma_bytes)
+        
+        zona_horaria = pytz.timezone('Europe/Madrid')
+        hora_entrega = datetime.now(zona_horaria)
 
         nuevo_registro = Registro(
             tipo_operacion=tipo_operacion,
@@ -137,7 +146,8 @@ def formulario():
             acepta=acepta,
             proteccion_datos=proteccion_datos,
             idioma=idioma,
-            firma_filename=firma_filename
+            firma_filename=firma_filename,
+            hora_entrega=hora_entrega 
         )
 
         db.session.add(nuevo_registro)
@@ -318,20 +328,25 @@ def eliminar_registro(registro_id):
     flash("Registro eliminado correctamente.")
     return redirect(url_for('panel_control'))
 
-@app.route('/exportar_registros_pdf')
+@app.route('/exportar_registros_pdf', methods=['POST'])
 @login_required
 def exportar_registros_pdf():
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    query = Registro.query
-    if fecha_inicio and fecha_fin:
-        query = query.filter(
-            Registro.fecha >= datetime.strptime(fecha_inicio, "%Y-%m-%d").date(),
-            Registro.fecha <= datetime.strptime(fecha_fin, "%Y-%m-%d").date()
-        )
-    registros = query.all()
-    pdf_buffer = generar_registro_pdf(registros)
-    return send_file(pdf_buffer, as_attachment=True, download_name='registro_conductores.pdf', mimetype='application/pdf')
+    from generar_registro_conductores_pdf import generar_registro_pdf
+
+    registros_filtrados = request.form.get('registros_filtrados')
+    if not registros_filtrados:
+        flash("No se recibieron registros filtrados.")
+        return redirect(url_for('registros'))
+
+    try:
+        import json
+        registros = json.loads(registros_filtrados)
+    except Exception as e:
+        flash("Error al procesar los registros.")
+        return redirect(url_for('registros'))
+
+    ruta_pdf = generar_registro_pdf(registros)
+    return send_file(ruta_pdf, as_attachment=True, download_name='registro_conductores.pdf', mimetype='application/pdf')
 
 @app.route('/login-camionero', methods=['GET', 'POST'])
 def login_camionero():
@@ -341,7 +356,7 @@ def login_camionero():
 
         camionero = Camionero.query.filter_by(dni=dni).first()
 
-        if camionero and camionero.password == password:
+        if camionero and camionero.check_password(password):
             # Guardamos su info en la sesión para autorrellenar luego
             session['camionero_id'] = camionero.id
             flash("Has iniciado sesión correctamente.")
@@ -387,6 +402,37 @@ def registro_camionero():
         return redirect(url_for('login_camionero'))
 
     return render_template('registro_camionero.html')
+
+@app.route('/logout-camionero')
+def logout_camionero():
+    session.pop('camionero_id', None)
+    flash("Sesión cerrada correctamente.")
+    return redirect(url_for('formulario'))
+
+@app.route('/exportar_registros_excel', methods=['POST'])
+@login_required
+def exportar_registros_excel():
+    registros_filtrados = request.form.get('registros_filtrados')
+    if not registros_filtrados:
+        flash("No se recibieron registros filtrados.")
+        return redirect(url_for('registros'))
+
+    try:
+        import json
+        registros = json.loads(registros_filtrados)
+    except Exception as e:
+        flash("Error al procesar los registros.")
+        return redirect(url_for('registros'))
+
+    df = pd.DataFrame(registros)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Registros')
+
+    output.seek(0)
+    nombre_archivo = f"registros_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(output, as_attachment=True, download_name=nombre_archivo, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 if __name__ == '__main__':
     app.run(debug=True)
