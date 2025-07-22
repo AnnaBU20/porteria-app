@@ -89,14 +89,23 @@
 </head>
 <body>
 
+    {% if request.endpoint not in ['login_camionero', 'registro_camionero', 'confirmacion'] %}
     <header>
         <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo">
         <h1>Portería</h1>
-        <nav>
-            <a href="/">Formulario</a>
-            <a href="/registros">Registros</a>
+
+        {% if request.endpoint not in ['formulario'] %}
+        <nav style="background-color: transparent; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <a href="{{ url_for('formulario') }}" style="color: white; text-decoration: none; margin: 0 15px;">Formulario</a>
+                <a href="{{ url_for('registros') }}" style="color: white; text-decoration: none; margin: 0 15px;">Registros</a>
+                <a href="{{ url_for('panel_control') }}" style="color: white; text-decoration: none; margin: 0 15px;">Panel de Control</a>
+                <a href="{{ url_for('qr_lote') }}" style="color: white; text-decoration: none; margin: 0 15px;">Generar QR</a>
+            </div>
         </nav>
+        {% endif %}
     </header>
+    {% endif %}
 
     <div class="container">
         {% block content %}

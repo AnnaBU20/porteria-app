@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 style="text-align: center; color: #163677;">Registro de nuevo camionero</h1>
+
+    <form method="POST">
+        <label for="dni">DNI:</label>
+        <input type="text" name="dni" required>
+
+        <label for="password">Contraseña:</label>
+        <input type="password" name="password" required>
+
+        <label for="nombre">Nombre completo:</label>
+        <input type="text" name="nombre" required>
+
+        <label for="telefono">Teléfono:</label>
+        <input type="text" name="telefono" required>
+
+        <label for="empresa">Empresa:</label>
+        <input type="text" name="empresa" required>
+
+        <label for="matricula_tractora">Matrícula tractora:</label>
+        <input type="text" name="matricula_tractora" required>
+
+        <label for="matricula_remolque">Matrícula remolque:</label>
+        <input type="text" name="matricula_remolque" required>
+
+        <button type="submit">Registrarse</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px;">
+        ¿Ya tienes cuenta? <a href="{{ url_for('login_camionero') }}" style="color: #163677; font-weight: bold;">Inicia sesión aquí</a>
+    </p>
+</div>
+{% endblock %}

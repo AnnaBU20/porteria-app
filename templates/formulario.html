@@ -62,6 +62,13 @@
 <body>
     <div class="container">
         <h1>Registro de Entrada</h1>
+        {% if not session.get('camionero_id') %}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="{{ url_for('login_camionero') }}" style="margin: 0 20px; text-decoration: none; font-weight: bold; color: #163677;">Login</a>
+            <a href="{{ url_for('registro_camionero') }}" style="margin: 0 20px; text-decoration: none; font-weight: bold; color: #163677;">Registro</a>
+        </div>
+        {% endif %}
+
         <form method="POST">
             <label>Tipo operación:</label>
             <select name="tipo_operacion" required>
@@ -72,25 +79,25 @@
             </select>
 
             <label>Empresa - Company:</label>
-            <input type="text" name="empresa" required>
+            <input type="text" name="empresa" required value="{{ camionero_data.empresa if camionero_data else '' }}">
 
             <label>Matrícula tractora - Tractor plate:</label>
-            <input type="text" name="matricula_tractora" required>
+            <input type="text" name="matricula_tractora" required value="{{ camionero_data.matricula_tractora if camionero_data else '' }}">
 
             <label>Matrícula remolque - Trailer plate:</label>
-            <input type="text" name="matricula_remolque" required>
+            <input type="text" name="matricula_remolque" required value="{{ camionero_data.matricula_remolque if camionero_data else '' }}">
 
             <label>Nombre y apellidos - Name and surname:</label>
-            <input type="text" name="nombre" required>
+            <input type="text" name="nombre" required value="{{ camionero_data.nombre if camionero_data else '' }}">
 
             <label>DNI - ID:</label>
-            <input type="text" name="dni" required>
+            <input type="text" name="dni" required value="{{ camionero_data.dni if camionero_data else '' }}">
 
             <label for="telefono">Teléfono del conductor:</label>
-            <input type="text" id="telefono" name="telefono" required>
+            <input type="text" id="telefono" name="telefono" required value="{{ camionero_data.telefono if camionero_data else '' }}">
 
             <label>Fecha - Date:</label>
-            <input type="date" name="fecha" required>
+            <input type="date" name="fecha" required value="{{ datetime.utcnow().strftime('%Y-%m-%d') }}">
 
             <label>Idioma - Language:</label>
             <select name="idioma" required>

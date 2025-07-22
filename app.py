@@ -15,6 +15,8 @@ from reportlab.lib.utils import ImageReader
 import requests
 from anadir_info_pdf import generar_protocolo_desde_plantilla
 from generar_registro_conductores_pdf import generar_registro_pdf
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import session
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_segura'
@@ -63,6 +65,22 @@ class Usuario(UserMixin):
     username = "porteria"
     password = "porteria123"
 
+class Camionero(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    matricula_tractora = db.Column(db.String(20), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)
+    dni = db.Column(db.String(20), nullable=False)
+    empresa = db.Column(db.String(100), nullable=False)
+    matricula_remolque = db.Column(db.String(20), nullable=False)
+    telefono = db.Column(db.String(20), nullable=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
 @login_manager.user_loader
 def load_user(user_id):
     if user_id == "1":
@@ -71,6 +89,13 @@ def load_user(user_id):
 
 @app.route('/', methods=['GET', 'POST'])
 def formulario():
+    camionero_data = None  # ← Este debe ir bien alineado
+
+    if 'camionero_id' in session:
+        camionero = Camionero.query.get(session['camionero_id'])
+        if camionero:
+            camionero_data = camionero
+
     if request.method == 'POST':
         tipo_operacion = request.form['tipo_operacion']
         empresa = request.form['empresa']
@@ -124,7 +149,7 @@ def formulario():
 
         return render_template('confirmacion.html', registro_id=nuevo_registro.id, protocolo_filename=nuevo_registro.protocolo_filename)
 
-    return render_template('formulario.html')
+    return render_template('formulario.html', camionero_data=camionero_data, datetime=datetime)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -193,41 +218,59 @@ def generar_qr_lote():
 
     # Margen de 1cm (10mm)
     margen = 10 * mm
-    espacio_total = height - 2 * margen
-    espacio_entre = espacio_total / 7
+    qr_size = 30 * mm
+    texto_offset_x = 5 * mm
+    espacio_entre_qr_y_texto = 15 * mm
+    espacio_vertical = (height - 2 * margen - 7 * qr_size) / 6  # 7 filas, 6 huecos
 
-    qr_size = 25 * mm
-    texto_x_offset = 30 * mm
-    interlineado = 4
+    # Columnas
+    col1_x_qr = margen
+    col1_x_texto = col1_x_qr + qr_size + texto_offset_x - 5 * mm
 
-    for i in range(7):
-        y = height - margen - (i * espacio_entre) - qr_size
-        for columna in [0, 1]:
+    col2_x_texto_derecha = width - margen
+    col2_x_texto = col2_x_texto_derecha - 60 * mm  # Aproximado
+    col2_x_qr = col2_x_texto - espacio_entre_qr_y_texto - qr_size + 15 * mm
+
+    y = height - margen - qr_size
+
+    for fila in range(7):
+        for col in range(2):
             codigo = str(uuid.uuid4())
-            enlace = f"https://porteria-kr.onrender.com/registro_unico/{codigo}"
-            db.session.add(QRUnico(codigo=codigo))
+            link = f"https://porteria-kr.onrender.com/registro_unico/{codigo}"
 
-            qr_img = qrcode.make(enlace)
-            qr_io = io.BytesIO()
-            qr_img.save(qr_io, format='PNG')
-            qr_io.seek(0)
+            nuevo_qr = QRUnico(codigo=codigo)
+            db.session.add(nuevo_qr)
 
-            if columna == 0:
-                x_qr = margen
-                x_text = x_qr + qr_size + 5
+            qr_img = qrcode.make(link)
+            qr_buffer = io.BytesIO()
+            qr_img.save(qr_buffer, format='PNG')
+            qr_buffer.seek(0)
+            qr_reader = ImageReader(qr_buffer)
+
+            # Posición en columna
+            if col == 0:
+                qr_x = col1_x_qr
+                text_x = col1_x_texto
             else:
-                x_text = width - margen - 70 * mm
-                x_qr = x_text + 50 * mm
+                qr_x = col2_x_qr
+                text_x = col2_x_texto
 
-            c.drawImage(ImageReader(qr_io), x_qr, y, width=qr_size, height=qr_size)
+            # Dibujar QR
+            c.drawImage(qr_reader, qr_x, y, width=qr_size, height=qr_size)
+
+            # Texto centrado verticalmente respecto al QR
+            text_y = y + qr_size / 2 + 4
+
             c.setFont("Helvetica", 9)
-            c.drawString(x_text, y + qr_size/2 + interlineado, "Escanee este código al llegar a Kronospan")
-            c.drawString(x_text, y + qr_size/2 - interlineado, "para registrarse. Este QR es de un solo uso.")
+            c.drawString(text_x, text_y, "Escanee este código al llegar a Kronospan")
+            c.drawString(text_x, text_y - 12, "para registrarse. Este QR es de un solo uso.")
+
+        y -= qr_size + espacio_vertical
 
     db.session.commit()
     c.save()
     buffer.seek(0)
-    
+
     return send_file(buffer, as_attachment=True, download_name="qr_kronospan.pdf", mimetype='application/pdf')
 
 @app.route('/registro_unico/<codigo>', methods=['GET', 'POST'])
@@ -289,6 +332,57 @@ def exportar_registros_pdf():
     registros = query.all()
     pdf_buffer = generar_registro_pdf(registros)
     return send_file(pdf_buffer, as_attachment=True, download_name='registro_conductores.pdf', mimetype='application/pdf')
+
+@app.route('/login-camionero', methods=['GET', 'POST'])
+def login_camionero():
+    if request.method == 'POST':
+        dni = request.form['dni']
+        password = request.form['password']
+
+        camionero = Camionero.query.filter_by(dni=dni).first()
+
+        if camionero and camionero.password == password:
+            # Guardamos su info en la sesión para autorrellenar luego
+            session['camionero_id'] = camionero.id
+            flash("Has iniciado sesión correctamente.")
+            return redirect(url_for('formulario'))
+        else:
+            flash("Matrícula o contraseña incorrecta.")
+            return redirect(url_for('login_camionero'))
+
+    return render_template('login_camionero.html')
+
+@app.route('/registro-camionero', methods=['GET', 'POST'])
+def registro_camionero():
+    if request.method == 'POST':
+        dni = request.form['dni']
+        password = request.form['password']
+        nombre = request.form['nombre']
+        telefono = request.form['telefono']
+        empresa = request.form['empresa']
+        matricula_tractora = request.form['matricula_tractora']
+        matricula_remolque = request.form['matricula_remolque']
+
+        # Verificar si ya existe un camionero con ese DNI
+        if Camionero.query.filter_by(dni=dni).first():
+            flash("Ya existe un usuario con ese DNI.")
+            return redirect(url_for('registro_camionero'))
+
+        nuevo = Camionero(
+            dni=dni,
+            password=password,
+            nombre=nombre,
+            telefono=telefono,
+            empresa=empresa,
+            matricula_tractora=matricula_tractora,
+            matricula_remolque=matricula_remolque
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        flash("Registro exitoso. Ahora puedes iniciar sesión.")
+        return redirect(url_for('login_camionero'))
+
+    return render_template('registro_camionero.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -3,7 +3,6 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 import os
 from datetime import datetime
-from googletrans import Translator
 
 def generar_protocolo(registro):
     os.makedirs("pdfs", exist_ok=True)
@@ -16,11 +15,11 @@ def generar_protocolo(registro):
     margen_superior = height - 40
     margen_lateral = 50
 
-    # TÍTULO
+    # Título principal
     c.setFont("Helvetica-Bold", 22)
     c.drawCentredString(width / 2, margen_superior, "PROTOCOLO DE SEGURIDAD")
 
-    # DATOS DEL CAMIONERO
+    # Datos del camionero (con letra más pequeña y menos interlineado)
     c.setFont("Helvetica", 10)
     datos_linea1 = (
         f"Fecha: {registro.fecha}    Hora: {registro.hora_entrega.strftime('%H:%M')}    "
@@ -30,10 +29,10 @@ def generar_protocolo(registro):
         f"Tractora: {registro.matricula_tractora}    Remolque: {registro.matricula_remolque}    "
         f"Nombre: {registro.nombre}    DNI: {registro.dni}    Idioma: {registro.idioma}"
     )
-    c.drawCentredString(width / 2, margen_superior - 20, datos_linea1)
-    c.drawCentredString(width / 2, margen_superior - 35, datos_linea2)
+    c.drawCentredString(width / 2, margen_superior - 25, datos_linea1)
+    c.drawCentredString(width / 2, margen_superior - 40, datos_linea2)
 
-    # TEXTO ORIGINAL EN ESPAÑOL (COMPLETO)
+    # Texto en español (limitado a la mitad izquierda)
     texto_es = """
 (ES) RESPONSABILIDAD DE LOS CONDUCTORES
 1. Acceso y operaciones en KRONOSPAN
@@ -49,7 +48,7 @@ b) NO pasar por los puertas automáticas para vehículos. Usar las puertas peato
 c) NO utilizar sistemas de elevación de KRONOSPAN.
 d) NO permanezca en el radio de accion de maquinaria, bajo cargas suspendidas o junto a los paquetes de tablero.
 e) NO abandone materiales junto a zonas de transito de personas o vehículos.
-t) NO se suba a los paquetes de tablero. Utilice medios auxiliares adecuados.
+f) NO se suba a los paquetes de tablero. Utilice medios auxiliares adecuados.
 3. Seguridad de la carga y de los materiales transportados
 El conductor es la única persona con responsabilidad directa, para la carga y el transporte de materiales, y por lo tanto debe:
 a) Supervisar personalmente la correcta carga de todos los materiales en su vehículo.
@@ -58,13 +57,12 @@ c) Cubrir adecuadamente los materiales, tanto para una mayor seguridad durante s
 4. Declaración de responsabilidad del conductor
 Con la firma de este documento, el conductor declara :
 a) Asumir personalmente cualquier responsabilidad directa e indirecta, tanto civiles como penales para los accidentes, lesiones o daños a personas, a la propiedad de KRONOSPAN o de terceros derivadas de la no observación o del incumplimiento de las normas de seguridad que figuran en los puntos 1, 2 y 3 de este documento.
-b) Asumir personalmente cualquier responsabilidad directa e indirecta, tanto civiles como penales para los accidentes, lesiones o daños a personas, a la propiedad de KRONOSPAN o de terceros causados durente la carga del camión y el transporte por carretera de la mercancia hasta destino final.
+b) Asumir personalmente cualquier responsabilidad directa e indirecta, tanto civiles como penales para los accidentes, lesiones o daños a personas, a la propiedad de KRONOSPAN o de terceros causados durante la carga del camión y el transporte por carretera de la mercancia hasta destino final.
 
 (ES) NORMAS DE ACTUACIÓN MEDIOAMBIENTAL
 1. Residuos autorizados a despositar en las instalaciones
 a) Sólo se podrán depositar en las instalaciones de Kronospan residuos domésticos (envases, basura orgánica y latas) y residuos de madera recogidos al barrer el fondo de la caja.
-b) Estos residuos se depositarán en los contenedores correspondientes (ver figura 1).
-Basura orgánica: contenedor marrón / Envases: contenedor amarillo / Latas: contenedor negro / Barreduras: contenedor verde
+b) Estos residuos se depositarán en los contenedores correspondientes (ver figura 1). Basura orgánica:contenedor marrón / Envases: contenedor amarillo / Latas: contenedor negro/ Barreduras:contenedor verde
 2. Operaciones de mantenimiento de los vehículos
 a) Está prohibida cualquier operación de mantenimiento de sus vehículos, como pueden ser la limpieza o sustitución de filtros, cambios de aceite, limpieza exterior del vehículo...
 b) Sólo está autorizada la limpieza del interior de la caja para retirar restos de madera cuando se realiza la descarga de material en el parque de madera. En las zonas de carga de tablero, la limpieza del interior de la caja está permitida siempre que se recojan los residuos y se depositen en el contenedor habilitado para ello.
@@ -75,46 +73,39 @@ b) Avisar inmediatamente a personal de Kronospan.
 a) El incumplimiento de las presentes normas tendrá como consecuencia la imposición de una multa de 150 € por infracción, que será descontada por Kronospan en el siguiente pago, todo ello sin perjuicio de que el transportista y/o su empresa se haga cargo, como responsable, de todos los daños y perjuicios ocasionados por el incumplimiento.
 """
 
-    # ESPAÑOL a la izquierda
-    c.setFont("Helvetica", 7)
-    text_es = c.beginText(margen_lateral, margen_superior - 65)
+    c.setFont("Helvetica", 8)
+    text_es = c.beginText(margen_lateral, margen_superior - 80)
+    text_es.setWordSpace(0)
+    text_es.setCharSpace(0)
     text_es.setLeading(9)
+    text_es.setTextOrigin(margen_lateral, margen_superior - 100)
     for linea in texto_es.split('\n'):
         text_es.textLine(linea.strip())
+        # Cortamos el texto si sobrepasa la mitad de página:
+        if text_es.getX() > width / 2 - 50:
+            text_es.moveCursor(width / 2 - text_es.getX() - 50, 0)
     c.drawText(text_es)
 
-    # TRADUCCIÓN AUTOMÁTICA a la derecha
-    translator = Translator()
-    try:
-        if registro.idioma.upper() != "ES":
-            traduccion = translator.translate(texto_es, dest=registro.idioma.lower())
-            texto_traducido = traduccion.text
-        else:
-            texto_traducido = "(Mismo texto en español)"
-    except Exception:
-        texto_traducido = "(Traducción automática no disponible)"
+    # Bloque del idioma seleccionado a la derecha
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(width / 2 + 200, margen_superior - 100, f"({registro.idioma})")
+    c.setFont("Helvetica-Oblique", 10)
+    c.drawString(width / 2 + 200, margen_superior - 115, "(Traducción automática no disponible)")
 
-    c.setFont("Helvetica", 7)
-    text_otro = c.beginText(width/2 + 50, margen_superior - 65)
-    text_otro.setLeading(9)
-    for linea in texto_traducido.split('\n'):
-        text_otro.textLine(linea.strip())
-    c.drawText(text_otro)
-
-    # PIE DE PÁGINA
+    # Pie de página (completo y ajustado)
     c.setFont("Helvetica-Oblique", 6)
-    pie1 = "ES: Sus datos serán tratados con el fin de controlar el acceso a las instalaciones de Kronospan en condiciones de seguridad."
-    pie2 = "Puede ejercitar sus derechos de acceso, rectificación o supresión, limitación del tratamiento, Castañares S/N, Burgos, 09199 (España)"
-    pie3 = "EN: Your data will be processed in order to control access to the Kronospan facilities under safe conditions."
-    pie4 = "Email: privacy@kronospan.es — Spanish Data Protection Agency (www.aepd.es)"
+    pie1 = "ES: Sus datos serán tratados con el fin de controlar el acceso a las instalaciones de Kronospan en condiciones de seguridad. Puede ejercitar sus derechos de acceso, rectificación o supresión, limitación del tratamiento, Castañares S/N, Burgos, 09199 (España)"
+    pie2 = "o por medio de un correo electrónico dirigido a: privacy@kronospan.es Ello sin perjuicio de su derecho de presentar reclamación ante la Agencia Española de Protección de Datos (www.aepd.es) en caso de considerar vulnerados sus derechos en este ámbito."
+    pie3 = "EN: Your data will be processed in order to control access to the Kronospan facilities under safe conditions. You may exercise your rights of access, rectification or elimination, limitation of treatment, portability or opposition by sending"
+    pie4 = "a postal mail to Barrio Castañares S/N, Burgos 09199 (Spain), or by email addressed to: privacy@kronospan.es. This without prejudice to your right to file a claim with the Spanish Agency for Data Protection (www.aepd.es)."
 
-    base_y = 25
+    base_y = 20
     c.drawCentredString(width / 2, base_y, pie1)
     c.drawCentredString(width / 2, base_y - 8, pie2)
     c.drawCentredString(width / 2, base_y - 16, pie3)
     c.drawCentredString(width / 2, base_y - 24, pie4)
 
-    # FECHA GENERACIÓN
+    # Fecha/hora de generación arriba derecha
     fecha_gen = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.setFont("Helvetica-Oblique", 8)
     c.drawRightString(width - 30, height - 20, f"Generado: {fecha_gen}")
