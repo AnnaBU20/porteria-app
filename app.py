@@ -363,20 +363,24 @@ def registro_camionero():
         matricula_tractora = request.form['matricula_tractora']
         matricula_remolque = request.form['matricula_remolque']
 
-        # Verificar si ya existe un camionero con ese DNI
+        # Verificar si ya existe un camionero con ese DNI o matrícula
         if Camionero.query.filter_by(dni=dni).first():
             flash("Ya existe un usuario con ese DNI.")
+            return redirect(url_for('registro_camionero'))
+        if Camionero.query.filter_by(matricula_tractora=matricula_tractora).first():
+            flash("Ya existe un usuario con esa matrícula tractora.")
             return redirect(url_for('registro_camionero'))
 
         nuevo = Camionero(
             dni=dni,
-            password=password,
             nombre=nombre,
             telefono=telefono,
             empresa=empresa,
             matricula_tractora=matricula_tractora,
             matricula_remolque=matricula_remolque
         )
+        nuevo.set_password(password)
+
         db.session.add(nuevo)
         db.session.commit()
         flash("Registro exitoso. Ahora puedes iniciar sesión.")
