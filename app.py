@@ -21,6 +21,8 @@ import pandas as pd
 from flask import send_file
 import json
 import pytz
+from datetime import datetime, timedelta
+from models import db, Registro 
 
 
 
@@ -433,6 +435,47 @@ def exportar_registros_excel():
     output.seek(0)
     nombre_archivo = f"registros_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return send_file(output, as_attachment=True, download_name=nombre_archivo, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+def limpiar_registros_antiguos():
+    limite = datetime.utcnow() - timedelta(days=30)
+    registros_a_borrar = Registro.query.filter(Registro.fecha < limite.date()).all()
+    for registro in registros_a_borrar:
+        # Eliminar firma si existe
+        if registro.firma_filename:
+            ruta_firma = os.path.join("static", "firmas", registro.firma_filename)
+            if os.path.exists(ruta_firma):
+                os.remove(ruta_firma)
+        db.session.delete(registro)
+    db.session.commit()
+
+
+@app.before_request
+def ejecutar_limpieza():
+    ruta_marcador = 'ultima_limpieza.txt'
+    hoy = datetime.utcnow().date()
+
+    # Si el archivo no existe, crearlo y ejecutar limpieza
+    if not os.path.exists(ruta_marcador):
+        with open(ruta_marcador, 'w') as f:
+            f.write(hoy.isoformat())
+        limpiar_registros_antiguos()
+        return
+
+    # Leer la fecha de la última limpieza
+    with open(ruta_marcador, 'r') as f:
+        ultima_fecha_str = f.read().strip()
+        try:
+            ultima_fecha = datetime.fromisoformat(ultima_fecha_str).date()
+        except ValueError:
+            ultima_fecha = hoy - timedelta(days=1)  # Forzar limpieza si el formato falla
+
+    # Si ha pasado un día, limpiar y actualizar el archivo
+    if hoy > ultima_fecha:
+        limpiar_registros_antiguos()
+        with open(ruta_marcador, 'w') as f:
+            f.write(hoy.isoformat())
+
 
 if __name__ == '__main__':
     app.run(debug=True)
