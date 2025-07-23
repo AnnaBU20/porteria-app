@@ -35,7 +35,7 @@
         <tr>
             {% for i in range(9) %}
             <th>
-                <input type="text" onkeyup="buscarPorTexto(this, {{ i }})" placeholder="Buscar..." style="width: 100%; padding: 5px;">
+                <input type="text" onkeyup="buscarPorTexto(this, { i })" placeholder="Buscar..." style="width: 100%; padding: 5px;">
             </th>
             {% endfor %}
             <th></th>
