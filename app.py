@@ -28,7 +28,9 @@ from models import db, Registro
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_segura'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///porteria.db'
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'porteria.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 login_manager = LoginManager()
@@ -37,24 +39,6 @@ login_manager.login_view = 'login'
 
 ULTRAMSG_INSTANCE_ID = os.getenv("ULTRAMSG_INSTANCE_ID")
 ULTRAMSG_TOKEN = os.getenv("ULTRAMSG_TOKEN")
-
-class Registro(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    tipo_operacion = db.Column(db.String(50), nullable=False)
-    empresa = db.Column(db.String(100), nullable=False)
-    matricula_tractora = db.Column(db.String(20), nullable=False)
-    matricula_remolque = db.Column(db.String(20), nullable=False)
-    nombre = db.Column(db.String(100), nullable=False)
-    dni = db.Column(db.String(20), nullable=False)
-    telefono = db.Column(db.String(20), nullable=True)
-    fecha = db.Column(db.Date, nullable=False)
-    hora_entrega = db.Column(db.DateTime, default=datetime.utcnow)
-    acepta = db.Column(db.Boolean, nullable=False)
-    proteccion_datos = db.Column(db.Boolean, nullable=False)
-    idioma = db.Column(db.String(10), nullable=False)
-    firma_filename = db.Column(db.String(200), nullable=True)
-    protocolo_filename = db.Column(db.String(200), nullable=True)
-    estado = db.Column(db.String(20), nullable=False, default="esperando")
 
 class QRUnico(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,7 +62,7 @@ class Camionero(db.Model):
     matricula_tractora = db.Column(db.String(20), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
-    dni = db.Column(db.String(20), nullable=False)
+    dni = db.Column(db.String(20), unique=True, nullable=False)
     empresa = db.Column(db.String(100), nullable=False)
     matricula_remolque = db.Column(db.String(20), nullable=False)
     telefono = db.Column(db.String(20), nullable=True)
@@ -476,6 +460,29 @@ def ejecutar_limpieza():
         with open(ruta_marcador, 'w') as f:
             f.write(hoy.isoformat())
 
+@app.route('/recuperar-contrasena', methods=['GET', 'POST'])
+def recuperar_contrasena():
+    if request.method == 'POST':
+        dni = request.form['dni']
+        nueva_contrasena = request.form['nueva_contrasena']
+
+        camionero = Camionero.query.filter_by(dni=dni).first()
+        if camionero:
+            camionero.set_password(nueva_contrasena)
+            db.session.commit()
+            flash('Contraseña actualizada correctamente.')
+            return redirect(url_for('login_camionero'))
+        else:
+            flash('No se encontró un usuario con ese DNI.')
+
+    return render_template('recuperar_contrasena.html')
+
+import os
+
+with app.app_context():
+    db_path = os.path.join('instance', 'porteria.db')
+    if not os.path.exists(db_path):
+        db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True)
