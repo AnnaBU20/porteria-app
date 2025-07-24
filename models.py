@@ -13,10 +13,10 @@ class Registro(db.Model):
     dni = db.Column(db.String(50), nullable=False)
     telefono = db.Column(db.String(50), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
-    hora_entrega = db.Column(db.DateTime, default=datetime.utcnow)  # Corrigido a DateTime
+    hora_entrega = db.Column(db.DateTime, default=datetime.utcnow)
     acepta = db.Column(db.Boolean, nullable=False)
-    proteccion_datos = db.Column(db.Boolean, nullable=False)  # Añadido
+    proteccion_datos = db.Column(db.Boolean, nullable=False)
     idioma = db.Column(db.String(10), nullable=False)
     firma_filename = db.Column(db.String(200))
     protocolo_filename = db.Column(db.String(200))
-    estado = db.Column(db.String(20), nullable=False, default="esperando")  # Añadido
+    estado = db.Column(db.String(20), nullable=False, default="esperando")
