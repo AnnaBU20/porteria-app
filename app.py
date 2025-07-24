@@ -335,14 +335,27 @@ def exportar_registros_pdf():
         return redirect(url_for('registros'))
 
     try:
-        import json
         registros = json.loads(registros_filtrados)
     except Exception as e:
         flash("Error al procesar los registros.")
         return redirect(url_for('registros'))
 
+    # Asegurarse de que cada registro tiene firma_filename
+    for r in registros:
+        fecha_dt = datetime.strptime(r['fecha'], "%d/%m/%Y").date()
+        registro_db = Registro.query.filter_by(dni=r['dni'], fecha=fecha_dt).first()
+        if registro_db and not r.get('firma_filename'):
+            r['firma_filename'] = registro_db.firma_filename
+
+    # Generar el PDF con los registros completos (incluyendo la firma)
     ruta_pdf = generar_registro_pdf(registros)
-    return send_file(ruta_pdf, as_attachment=True, download_name='registro_conductores.pdf', mimetype='application/pdf')
+
+    return send_file(
+        ruta_pdf,
+        as_attachment=True,
+        download_name='registro_conductores.pdf',
+        mimetype='application/pdf'
+    )
 
 @app.route('/login-camionero', methods=['GET', 'POST'])
 def login_camionero():
@@ -490,9 +503,7 @@ def recuperar_contrasena():
 import os
 
 with app.app_context():
-    db_path = os.path.join('instance', 'porteria.db')
-    if not os.path.exists(db_path):
-        db.create_all()
+    db.create_all()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
