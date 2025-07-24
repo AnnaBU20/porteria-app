@@ -28,8 +28,17 @@ from models import db, Registro
 
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_segura'
+
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'porteria.db')
+
+# Detectar si estamos en Render o en local
+if os.environ.get("RENDER") == "true":
+    db_path = '/tmp/porteria.db'  # en Render solo se puede escribir en /tmp
+else:
+    db_path = os.path.join(basedir, 'instance', 'porteria.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
