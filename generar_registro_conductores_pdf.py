@@ -4,6 +4,7 @@ from PyPDF2 import PdfReader, PdfWriter
 import os
 import io
 from datetime import datetime
+from reportlab.lib.utils import ImageReader
 
 def generar_registro_pdf(registros):
     plantilla_path = os.path.join("plantillas", "registro_conductores.pdf")
@@ -51,13 +52,26 @@ def generar_registro_pdf(registros):
             can.drawString(coordenadas[base_idx + 3][0], coordenadas[base_idx + 3][1], registro['nombre'])
             can.drawString(coordenadas[base_idx + 4][0], coordenadas[base_idx + 4][1], registro['dni'])
             can.drawString(coordenadas[base_idx + 5][0], coordenadas[base_idx + 5][1], registro['fecha'])
+            # Insertar firma si existe
+            if registro.get('firma_filename'):
+                firma_path = os.path.join("static", "firmas", registro['firma_filename'])
+                if os.path.exists(firma_path):
+                    try:
+                        firma = ImageReader(firma_path)
+                        x_firma, y_firma = coordenadas[base_idx + 6]
+                        can.drawImage(firma, x_firma, y_firma - 10, width=60, height=20, preserveAspectRatio=True, mask='auto')
+                    except Exception as e:
+                        print(f"Error al insertar firma: {e}")
+                        can.drawString(coordenadas[base_idx + 6][0], coordenadas[base_idx + 6][1], "Firma no disponible")
+    can.save()
+    packet.seek(0)
+    overlay_pdf = PdfReader(packet)        
+    overlay_page = overlay_pdf.pages[0]
+    template_page.merge_page(overlay_page)
+    writer.add_page(template_page)
 
-        can.save()
-        packet.seek(0)
-        overlay_pdf = PdfReader(packet)
-        overlay_page = overlay_pdf.pages[0]
-        template_page.merge_page(overlay_page)
-        writer.add_page(template_page)
+        
+    # Añadir pie de página legal
 
     with open(output_path, "wb") as f:
         writer.write(f)

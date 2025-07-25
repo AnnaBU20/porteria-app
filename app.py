@@ -340,12 +340,19 @@ def exportar_registros_pdf():
         flash("Error al procesar los registros.")
         return redirect(url_for('registros'))
 
-    # Asegurarse de que cada registro tiene firma_filename
     for r in registros:
-        fecha_dt = datetime.strptime(r['fecha'], "%d/%m/%Y").date()
+        try:
+            fecha_dt = datetime.strptime(r['fecha'], "%d/%m/%Y").date()
+        except ValueError:
+            fecha_dt = datetime.strptime(r['fecha'], "%Y-%m-%d").date()
+
         registro_db = Registro.query.filter_by(dni=r['dni'], fecha=fecha_dt).first()
         if registro_db and not r.get('firma_filename'):
             r['firma_filename'] = registro_db.firma_filename
+
+    if registros:
+        print("🧾 Ejemplo de registro antes de generar PDF:")
+        print(registros[0])
 
     # Generar el PDF con los registros completos (incluyendo la firma)
     ruta_pdf = generar_registro_pdf(registros)
@@ -506,5 +513,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5050)
