@@ -31,13 +31,12 @@ app.secret_key = 'tu_clave_secreta_segura'
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Detectar si estamos en Render o en local
+# Usar PostgreSQL en Render, SQLite en local
 if os.environ.get("RENDER") == "true":
-    db_path = '/tmp/porteria.db'  # en Render solo se puede escribir en /tmp
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 else:
     db_path = os.path.join(basedir, 'instance', 'porteria.db')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -122,8 +121,13 @@ def formulario():
         if match:
             firma_bytes = base64.b64decode(match.group(1))
             firma_filename = f"{nombre}_{dni}_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
-            firma_path = os.path.join("static", "firmas", firma_filename)
-            os.makedirs(os.path.dirname(firma_path), exist_ok=True)
+            # Crear ruta segura para la firma (Render o local)
+        if os.environ.get("RENDER") == "true":
+            firma_dir = '/tmp/firmas'  # Render solo permite escritura en /tmp
+        else:
+            firma_dir = os.path.join("static", "firmas")
+        os.makedirs(firma_dir, exist_ok=True)
+        firma_path = os.path.join(firma_dir, firma_filename)
             with open(firma_path, "wb") as f:
                 f.write(firma_bytes)
         
