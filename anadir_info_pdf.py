@@ -35,7 +35,8 @@ def generar_protocolo_desde_plantilla(registro):
         can.drawCentredString(width / 2, height - 3 * 28.35, info)
         # Añadir imagen de la firma si existe
         if registro.firma_filename:
-            firma_path = os.path.join("static", "firmas", registro.firma_filename)
+            firma_dir = '/tmp/firmas' if os.environ.get("RENDER") == "true" else os.path.join("static", "firmas")
+            firma_path = os.path.join(firma_dir, registro['firma_filename'])
             if os.path.exists(firma_path):
                 firma_width = 100  # ancho de la imagen
                 firma_height = 40  # alto de la imagen
