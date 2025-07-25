@@ -121,13 +121,16 @@ def formulario():
         if match:
             firma_bytes = base64.b64decode(match.group(1))
             firma_filename = f"{nombre}_{dni}_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+            
             # Crear ruta segura para la firma (Render o local)
-        if os.environ.get("RENDER") == "true":
-            firma_dir = '/tmp/firmas'  # Render solo permite escritura en /tmp
-        else:
-            firma_dir = os.path.join("static", "firmas")
-        os.makedirs(firma_dir, exist_ok=True)
-        firma_path = os.path.join(firma_dir, firma_filename)
+            if os.environ.get("RENDER") == "true":
+                firma_dir = '/tmp/firmas'  # Render solo permite escritura en /tmp
+            else:
+                firma_dir = os.path.join("static", "firmas")
+
+            os.makedirs(firma_dir, exist_ok=True)
+            firma_path = os.path.join(firma_dir, firma_filename)
+
             with open(firma_path, "wb") as f:
                 f.write(firma_bytes)
         
